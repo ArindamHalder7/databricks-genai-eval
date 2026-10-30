@@ -2,7 +2,7 @@ name: Run Databricks Eval Job daily
 
 on:
   schedule:
-    - cron: "0 12 * * *"   # every day at 09:00 UTC (10:00 UK summer time)
+    - cron: "15 12 * * *"   # every day at 09:00 UTC (10:00 UK summer time)
   workflow_dispatch:       # adds a "Run workflow" button for manual runs
 
 jobs:

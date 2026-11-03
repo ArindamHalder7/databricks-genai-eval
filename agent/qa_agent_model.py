@@ -20,9 +20,11 @@ from mlflow.types.llm import (
     ChatParams,
 )
 
-AGENT_CODE_VERSION = "1.0.0"  # bump when you change behaviour; logged as a model version tag
+# Edit AGENT_CODE_VERSION and SYSTEM_PROMPT for new run in demo 
+AGENT_CODE_VERSION = "1.1.0"  # bump when you change behaviour; logged as a model version tag
 MODEL_ID = "claude-haiku-4-5-20251001"
-SYSTEM_PROMPT = "You are a helpful assistant. Answer questions concisely."
+# SYSTEM_PROMPT = "You are a helpful assistant. Answer questions concisely."
+SYSTEM_PROMPT = "Answer in five words or fewer."
 DEFAULT_MAX_TOKENS = 1024
 
 

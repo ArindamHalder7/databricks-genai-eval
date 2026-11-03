@@ -1,0 +1,63 @@
+# Register a new agent version in Unity Catalog whenever the agent code changes on main.
+# The new model version auto-triggers the Databricks deployment job
+# "Agent Deployment Eval - genai_qa_agent" (UC model accenture.default.genai_qa_agent), which evaluates it and opens a Jira bug on failure.
+#
+# Repository secrets: DATABRICKS_HOST (https://enb-accenture.cloud.databricks.com), DATABRICKS_TOKEN
+# (or replace the token with DATABRICKS_CLIENT_ID / DATABRICKS_CLIENT_SECRET for a service principal).
+name: Register agent and evaluate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "agent/**"
+      - "register_agent.py"
+      - "requirements.txt"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Register even if the agent code is unchanged"
+        type: boolean
+        default: false
+
+concurrency:
+  group: register-agent
+  cancel-in-progress: false
+
+jobs:
+  register:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Register new agent version (triggers the evaluation deployment job)
+        id: register
+        run: |
+          ARGS="--wait-for-eval"
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ] || [ "${{ inputs.force }}" != "true" ]; then
+            ARGS="$ARGS --skip-if-unchanged"
+          fi
+          python register_agent.py $ARGS
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Agent registration"
+            echo "- Registration: ${{ steps.register.outputs.status }}"
+            echo "- Model version: ${{ steps.register.outputs.model_version }}"
+            echo "- Evaluation: ${{ steps.register.outputs.eval_state }}"
+            echo "- Evaluation run: ${{ steps.register.outputs.eval_run_url }}"
+          } >> "$GITHUB_STEP_SUMMARY"
